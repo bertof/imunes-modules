@@ -6,6 +6,7 @@
     nixpkgs.url = "github:nixos/nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
     pre-commit-hooks-nix.url = "github:cachix/pre-commit-hooks.nix";
+    nixos-generators = { url = "github:nix-community/nixos-generators"; inputs = { nixpkgs.follows = "nixpkgs"; }; };
   };
 
   outputs = inputs@{ self, nixpkgs, ... }: inputs.flake-parts.lib.mkFlake { inherit inputs; } {
@@ -60,17 +61,13 @@
 
       nixosModules = {
         default_config = {
-          # nixpkgs = { allowUnfree = true; };
           nix.extraOptions = "experimental-features = nix-command flakes";
-
-          users.users.user = {
-            isNormalUser = true;
-            extraGroups = [ "network" "networkmanager" "wheel" "docker" ];
-          };
+          services.qemuGuest.enable = true;
         };
 
         graphical_environment = {
           services.xserver = {
+            enable = true;
             desktopManager.gnome.enable = true;
             displayManager.gdm.enable = true;
           };
@@ -81,7 +78,7 @@
             options = {
               virtualisation.imunes = {
                 enable = lib.mkEnableOption "imunes";
-                package = lib.mkPackageOption pkgs.imunes-2-3-0;
+                package = lib.mkPackageOption pkgs "imunes-2-3-0" { };
               };
             };
 
@@ -99,15 +96,53 @@
               virtualisation.docker.enable = true;
             };
           };
+
+        computer-networks = {
+          imports = [
+            self.nixosModules.default_config
+            self.nixosModules.graphical_environment
+            self.nixosModules.imunes
+            ({ pkgs, ... }: {
+              system.stateVersion = "24.05";
+              users.users.user = {
+                isNormalUser = true;
+                extraGroups = [ "network" "networkmanager" "wheel" "docker" ];
+                password = "retiunimi";
+              };
+              environment.systemPackages = [ pkgs.nmap ];
+              virtualisation.imunes.enable = true;
+              virtualisation.vmVariant.virtualisation = { memorySize = 2048; cores = 2; };
+            })
+
+          ];
+        };
       };
 
-      nixosConfigurations.computer-networks = nixpkgs.lib.nixosSystems {
-        system = "x86_64-linux";
-        modules = [
-          self.nixosModules.default_config
-          self.nixosModules.imunes
-          { virtualisation.imunes.enable = true; }
-        ];
+      packages = {
+        x86_64-linux.computer-networks-vm = inputs.nixos-generators.nixosGenerate {
+          system = "x86_64-linux";
+          modules = [ self.nixosModules.computer-networks ];
+          format = "qcow"
+          ;
+        };
+
+        aarch64-linux.computer-networks-vm = inputs.nixos-generators.nixosGenerate {
+          system = "aarch64-linux";
+          modules = [ self.nixosModules.computer-networks ];
+          format = "qcow";
+        };
+      };
+
+      nixosConfigurations = {
+        computer-networks-arm64 = nixpkgs.lib.nixosSystem {
+          system = "aarch64-linux";
+          modules = [ self.nixosModules.computer-networks ];
+        };
+
+        computer-networks = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [ self.nixosModules.computer-networks ];
+        };
       };
     };
   };
