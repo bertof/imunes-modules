@@ -7,11 +7,7 @@ stages:
 build.x86_64-linux.computer-networks-vm:
   stage: build
   script:
-    - nix build \
-        --option substituters "http://nix-cache.cluster.sesar.int https://cache.nixos.org" \
-        --option system-features kvm \
-        --print-build-logs \
-          .#packages.x86_64-linux.computer-networks-vm
+    - nix build --option substituters "http://nix-cache.cluster.sesar.int https://cache.nixos.org" --option system-features kvm --print-build-logs .#packages.x86_64-linux.computer-networks-vm
     - cp -Lr result build_artifacts/
   artifacts:
     paths:
