@@ -1,0 +1,27 @@
+image: docker.io/nixpkgs/nix-flakes
+
+stages:
+  - build
+  - deploy
+
+build.x86_64-linux.computer-networks-vm:
+  stage: build
+  script:
+    - nix build --option substituters "http://nix-cache.cluster.sesar.int https://cache.nixos.org" --print-build-logs .#packages.x86_64-linux.computer-networks-vm
+    - cp -Lr result build_artifacts/
+  artifacts:
+    paths:
+      - build_artifacts/x86_64-linux.computer-networks-vm/
+    expire_in: 1 week
+  interruptible: true
+
+pages:
+  stage: deploy
+  script:
+    - mkdir public
+    - cp -r build_artifacts/* public/
+  artifacts:
+    paths:
+      - public
+  only:
+   - master
