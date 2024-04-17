@@ -33,6 +33,18 @@
 
         packages = {
           imunes = pkgs.callPackage ./pkgs/imunes { };
+          imunes-before-break = (pkgs.callPackage ./pkgs/imunes {
+            version = "2.3.0";
+            sha256 = pkgs.lib.fakeSha256;
+          }).overrideAttrs {
+            src = pkgs.fetchFromGitHub {
+              owner = "imunes";
+              repo = "imunes";
+              rev = "1a9d483";
+              sha256 = "sha256-KZQwFTVaTaBw1OtjGvf2ngQVLKd1b/h2GtTRiShCAHc=";
+            };
+
+          };
           imunes-2-3-0 = pkgs.callPackage ./pkgs/imunes {
             version = "2.3.0";
             sha256 = "sha256-Qf5u4oHnsJLGpDPRGSYbxDICL8MWiajxFb5/FADLfqc=";
@@ -56,7 +68,7 @@
 
     flake = {
       overlays.imunes = final: _prev: {
-        inherit (self.packages.${final.system}) imunes imunes-2-3-0;
+        inherit (self.packages.${final.system}) imunes imunes-2-3-0 imunes-before-break;
       };
 
       nixosModules = {
@@ -78,7 +90,7 @@
             options = {
               virtualisation.imunes = {
                 enable = lib.mkEnableOption "imunes";
-                package = lib.mkPackageOption pkgs "imunes-2-3-0" { };
+                package = lib.mkPackageOption pkgs "imunes-before-break" { };
               };
             };
 
