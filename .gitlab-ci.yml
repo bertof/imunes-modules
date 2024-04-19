@@ -15,6 +15,17 @@ build.x86_64-linux.computer-networks-vm:
     expire_in: 1 week
   interruptible: true
 
+build.aarch64-linux.computer-networks-vm:
+  stage: build
+  script:
+    - nix build --option substituters "http://nix-cache.cluster.sesar.int https://cache.nixos.org" --option system-features kvm --print-build-logs .#packages.aarch64-linux.computer-networks-vm
+    - cp -Lr result build_artifacts/
+  artifacts:
+    paths:
+      - build_artifacts/
+    expire_in: 1 week
+  interruptible: true
+
 pages:
   stage: deploy
   script:
