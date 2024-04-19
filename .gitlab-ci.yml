@@ -11,7 +11,7 @@ build.x86_64-linux.computer-networks-vm:
     - cp -Lr result build_artifacts/
   artifacts:
     paths:
-      - build_artifacts/x86_64-linux.computer-networks-vm/
+      - build_artifacts/
     expire_in: 1 week
   interruptible: true
 
